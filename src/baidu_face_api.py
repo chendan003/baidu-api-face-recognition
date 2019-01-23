@@ -6,7 +6,7 @@ import base64
 import os
 import sys
 import argparse
-
+import time
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -17,6 +17,7 @@ def parse_args(argv):
     parser.add_argument('--save-file', type=str, help='save file')
     parser.add_argument('--access-token', type=str, help='access-token')    
     return parser.parse_args(argv)
+
 
 
 def main(args):
@@ -30,30 +31,34 @@ def main(args):
         count = 0
         print('all image num: %d' %len(lines))
         for line in lines:
+		   # read image
             img_name = line.strip()
             full_name = os.path.join(root_dir, img_name)
-            person_label = img_name.split('/')[-2]
+            print (full_name)
             f2 = open(full_name, 'rb')
             img = base64.b64encode(f2.read())
-            host = 'https://aip.baidubce.com/rest/2.0/image-classify/v2/advanced_general'
+
+		   # requests	
+            host = 'https://aip.baidubce.com/rest/2.0/face/v3/detect'
             headers = {
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
-
             host = host + '?access_token=' + access_token
             data = {}
             data['access_token'] = access_token
             data['image'] = img
 
+            data["image_type"] = "BASE64"
+            data["face_field"] = "age,beauty,expression,faceshape,gender,glasses,race,qualities"
             data = urllib.urlencode(data)
-            url = host
-            req = urllib2.Request(url, data)
+            time.sleep(0.5)
+            req = urllib2.Request(host, data)
             response = urllib2.urlopen(req)
             result = json.loads(response.read())
-            id_name = result['result'][0]['keyword']
-            print('processing %d ' %count)
-            f3.write(person_label + ' ' + unicode(id_name) + '\n')
-            count = count + 1 
+            print('processing num:' ,count)
+            dic_ = json.dumps(result, indent=2)
+            f3.write(dic_ + ',\n')
+            count = count + 1
 
 if __name__ == '__main__':
     main(parse_args(sys.argv[1:]))
